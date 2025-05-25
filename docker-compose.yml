@@ -10,6 +10,8 @@ services:
       - "5001:5001"
     depends_on:
       - auth-server
+    volumes:
+      - ./shared:/app/shared
 
   service2:
     build: ./service2
@@ -17,6 +19,8 @@ services:
       - "5002:5002"
     depends_on:
       - auth-server
+    volumes:
+      - ./shared:/app/shared
 
   client-app:
     build: ./client-app

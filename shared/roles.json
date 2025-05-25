@@ -1,6 +1,6 @@
 {
-  "admin": ["op1", "op2", "op3"],
-  "manager": ["op1", "op2"],
+  "admin": ["op1", "op2", "op3", "op4", "op5"],
+  "manager": ["op1", "op2", "op3"],
   "user": ["op1"]
 }
 

@@ -33,7 +33,7 @@ function generateKeyPair() {
 // Login endpoint
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  
+
   const user = users[username];
   if (!user || user.password !== password) {
     return res.status(401).json({ error: 'Invalid username or password' });
@@ -71,14 +71,17 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Public key endpoint to retrieve user's public key (optional, client may cache from login)
+
+// Assuming `sessions` is accessible here — same as in your /login route
 app.get('/public-key/:username', (req, res) => {
   const username = req.params.username;
-  const session = sessions[username];
-  if (!session) {
-    return res.status(404).json({ error: 'User session not found' });
+
+  if (!sessions[username] || !sessions[username].publicKeyPem) {
+    return res.status(404).json({ message: 'Public key not found' });
   }
-  res.type('pem').send(session.publicKeyPem);
+
+  const publicKey = sessions[username].publicKeyPem;
+  res.json({ publicKey });
 });
 
 app.listen(PORT, () => {
