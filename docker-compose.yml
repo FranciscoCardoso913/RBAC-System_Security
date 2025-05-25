@@ -1,0 +1,26 @@
+services:
+  auth-server:
+    build: ./auth-server
+    ports:
+      - "4000:4000"
+
+  service1:
+    build: ./service1
+    ports:
+      - "5001:5001"
+    depends_on:
+      - auth-server
+
+  service2:
+    build: ./service2
+    ports:
+      - "5002:5002"
+    depends_on:
+      - auth-server
+
+  client-app:
+    build: ./client-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-server
