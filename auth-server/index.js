@@ -1,10 +1,86 @@
 const express = require('express');
-const app = express();
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');
+const forge = require('node-forge');
 
-app.get('/', (req, res) => {
-  res.send('Hello from Auth-Service');
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+const PORT = 4000;
+
+// In-memory users DB example:
+const users = {
+  alice: { password: 'password123', role: 'admin' },
+  bob: { password: 'password456', role: 'manager' },
+  eve: { password: 'password789', role: 'user' },
+};
+
+// Store session keys per user (in-memory for demo)
+const sessions = {};
+
+// Generate RSA keypair function (2048-bit)
+function generateKeyPair() {
+  return new Promise((resolve, reject) => {
+    forge.pki.rsa.generateKeyPair({ bits: 2048, workers: 2 }, (err, keypair) => {
+      if (err) reject(err);
+      else resolve(keypair);
+    });
+  });
+}
+
+// Login endpoint
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  
+  const user = users[username];
+  if (!user || user.password !== password) {
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+
+  // Generate RSA keypair for this user session
+  try {
+    const keypair = await generateKeyPair();
+    const privateKeyPem = forge.pki.privateKeyToPem(keypair.privateKey);
+    const publicKeyPem = forge.pki.publicKeyToPem(keypair.publicKey);
+
+    // Store keys in session
+    sessions[username] = { privateKeyPem, publicKeyPem, role: user.role };
+
+    // Prepare JWT payload
+    const payload = {
+      user: username,
+      role: user.role,
+      iss: 'auth-server',
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour expiry
+    };
+
+    // Sign JWT with private key (using RS256)
+    const token = jwt.sign(payload, privateKeyPem, { algorithm: 'RS256' });
+
+    // Send token and public key to client
+    res.json({
+      token,
+      publicKey: publicKeyPem,
+      role: user.role,
+    });
+  } catch (error) {
+    console.error('Error generating keys:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-app.listen(4000, () => {
-  console.log('Auth-Service running on port 4000');
+// Public key endpoint to retrieve user's public key (optional, client may cache from login)
+app.get('/public-key/:username', (req, res) => {
+  const username = req.params.username;
+  const session = sessions[username];
+  if (!session) {
+    return res.status(404).json({ error: 'User session not found' });
+  }
+  res.type('pem').send(session.publicKeyPem);
+});
+
+app.listen(PORT, () => {
+  console.log(`AuthN/AuthZ server running on http://localhost:${PORT}`);
 });
