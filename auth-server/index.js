@@ -1,3 +1,9 @@
+const https = require('https');
+const fs = require('fs');
+const credentials = {
+  key: fs.readFileSync('./shared/certs/key.pem'),
+  cert: fs.readFileSync('./shared/certs/cert.pem'),
+};
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -5,10 +11,17 @@ const jwt = require('jsonwebtoken');
 const forge = require('node-forge');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://localhost:3000', // or '*', for dev only
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Authorization', 'Content-Type'],
+}));
+
 app.use(bodyParser.json());
 
-const PORT = 4000;
+
+
 
 // In-memory users DB example:
 const users = {
@@ -84,6 +97,6 @@ app.get('/public-key/:username', (req, res) => {
   res.json({ publicKey });
 });
 
-app.listen(PORT, () => {
-  console.log(`AuthN/AuthZ server running on http://localhost:${PORT}`);
+https.createServer(credentials, app).listen(4000, () => {
+  console.log('Service 1 running with TLS on port 4000');
 });

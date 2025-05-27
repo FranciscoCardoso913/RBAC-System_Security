@@ -3,6 +3,8 @@ services:
     build: ./auth-server
     ports:
       - "4000:4000"
+    volumes:
+      - ./shared:/app/shared
 
   service1:
     build: ./service1
@@ -28,3 +30,5 @@ services:
       - "3000:3000"
     depends_on:
       - auth-server
+    volumes:
+      - ./shared:/app/shared

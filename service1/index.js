@@ -1,3 +1,9 @@
+const https = require('https');
+const fs = require('fs');
+const credentials = {
+  key: fs.readFileSync('./shared/certs/key.pem'),
+  cert: fs.readFileSync('./shared/certs/cert.pem'),
+};
 const express = require('express');
 const cors = require('cors');
 const verifyTokenAndRole = require('./shared/verifyToken');
@@ -35,6 +41,6 @@ app.get('/op3', verifyTokenAndRole('op3'), async (req, res) => {
   }
 });
 
-app.listen(5001, () => {
-  console.log('Service 1 running on port 3000');
+https.createServer(credentials, app).listen(5001, () => {
+  console.log('Service 1 running with TLS on port 5001');
 });
