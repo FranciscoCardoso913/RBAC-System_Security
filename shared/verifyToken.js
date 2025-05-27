@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
 const roles = require('./roles.json');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 function verifyTokenAndRole(requiredOp) {
   return async function (req, res, next) {
@@ -17,7 +20,23 @@ function verifyTokenAndRole(requiredOp) {
 
       const username = decoded.user;
 
-      const response = await fetch(`http://auth-server:4000/public-key/${username}`);
+      const httpsAgent = new https.Agent({
+        ca: fs.readFileSync(path.join(__dirname, './certs', 'ca.pem')),
+        rejectUnauthorized: true,  // <- enforce validation
+      });
+      
+      
+      
+      
+      const response = await fetch(`https://auth-server:4000/public-key/${username}`, {
+        method: 'GET',
+        headers: {
+          Authorization: req.headers.authorization,
+        },
+        agent: httpsAgent,
+        
+      });
+
       if (!response.ok) {
         throw new Error(`Failed to fetch public key: ${response.statusText}`);
       }

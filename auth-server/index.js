@@ -1,9 +1,6 @@
 const https = require('https');
 const fs = require('fs');
-const credentials = {
-  key: fs.readFileSync('./shared/certs/key.pem'),
-  cert: fs.readFileSync('./shared/certs/cert.pem'),
-};
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -11,16 +8,31 @@ const jwt = require('jsonwebtoken');
 const forge = require('node-forge');
 
 const app = express();
-app.use(cors({
-  origin: 'https://localhost:3000', // or '*', for dev only
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || /^https?:\/\/localhost:\d+$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Authorization', 'Content-Type'],
-}));
+};
+
+app.use(cors(corsOptions));
+
+
+
 
 app.use(bodyParser.json());
 
-
+const options = {
+  key: fs.readFileSync('./certs/auth-server.key'),
+  cert: fs.readFileSync('./certs/auth-server.crt'),
+  // ca: fs.readFileSync('./shared/certs/ca.pem'),  // trust this CA
+};
 
 
 // In-memory users DB example:
@@ -97,6 +109,6 @@ app.get('/public-key/:username', (req, res) => {
   res.json({ publicKey });
 });
 
-https.createServer(credentials, app).listen(4000, () => {
+https.createServer(options, app).listen(4000, () => {
   console.log('Service 1 running with TLS on port 4000');
 });
