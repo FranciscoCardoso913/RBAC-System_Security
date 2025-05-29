@@ -4,49 +4,40 @@ export default function Dashboard() {
   const role = localStorage.getItem('role') || 'unknown';
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Helper function to call backend ops
+  const operations = ['op1', 'op2', 'op3', 'op4', 'op5'];
+
   async function callOperation(op) {
     setError(null);
     setResult(null);
+    setLoading(true);
 
     try {
-      let response;
-      if (op === 'op4' || op === 'op5') {
-        response = await fetch(`https://localhost:5002/${op}`, {
-          method: op === 'op2' ? 'POST' : 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`,
-          },
-          credentials: 'include',
-          ...(op === 'op2' ? { body: JSON.stringify({}) } : {}),
-        });
-      } else {
-        response = await fetch(`https://localhost:5001/${op}`, {
-          method: op === 'op2' ? 'POST' : 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`,
-          },
-          credentials: 'include',
-          ...(op === 'op2' ? { body: JSON.stringify({}) } : {}),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error calling operation');
-      }
+      const port = ['op4', 'op5'].includes(op) ? 5002 : 5001;
+      const response = await fetch(`https://localhost:${port}/${op}`, {
+        method: op === 'op2' ? 'POST' : 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`,
+        },
+        credentials: 'include',
+        ...(op === 'op2' ? { body: JSON.stringify({}) } : {}),
+      });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Error calling operation');
+      }
+
       setResult(data);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
-  // 🔒 Logout function
   async function handleLogout() {
     try {
       const jwt = localStorage.getItem('jwt');
@@ -60,45 +51,96 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Logout failed:', err);
     } finally {
-      // Clear session on client side
       localStorage.removeItem('jwt');
       localStorage.removeItem('role');
-      window.location.href = '/'; // or redirect to login
+      localStorage.removeItem('publicKey');
+      window.location.href = '/';
     }
   }
 
   return (
-    <div>
-      <h2>Dashboard</h2>
-      <p>Welcome! Your role is: {role}</p>
-
-      <div style={{ marginBottom: '1rem' }}>
-        {['op1', 'op2', 'op3', 'op4', 'op5'].map((op) => (
-          <button
-            key={op}
-            onClick={() => callOperation(op)}
-            style={{ marginRight: '0.5rem' }}
-          >
-            {op.toUpperCase()}
-          </button>
-        ))}
-        <button onClick={handleLogout} style={{ marginLeft: '1rem', color: 'red' }}>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h2>Dashboard</h2>
+        <p>Your role: <strong>{role}</strong></p>
+        <button onClick={handleLogout} style={styles.logoutBtn}>
           Logout
         </button>
       </div>
 
-      {error && (
-        <div style={{ color: 'red' }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
+      <div style={styles.operations}>
+        {operations.map((op) => (
+          <button
+            key={op}
+            onClick={() => callOperation(op)}
+            style={styles.opButton}
+            disabled={loading}
+          >
+            {loading ? 'Loading...' : op.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {error && <div style={styles.error}>⚠️ {error}</div>}
 
       {result && (
-        <div>
+        <div style={styles.resultBox}>
           <strong>Result:</strong>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
+          <pre style={styles.result}>{JSON.stringify(result, null, 2)}</pre>
         </div>
       )}
     </div>
   );
 }
+
+// 💅 Inline styling for structure & simplicity
+const styles = {
+  container: {
+    padding: '2rem',
+    maxWidth: '800px',
+    margin: '0 auto',
+    fontFamily: 'sans-serif',
+  },
+  header: {
+    marginBottom: '2rem',
+  },
+  logoutBtn: {
+    backgroundColor: '#ff4d4f',
+    color: '#fff',
+    border: 'none',
+    padding: '0.5rem 1rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    float: 'right',
+  },
+  operations: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+    marginBottom: '1rem',
+  },
+  opButton: {
+    padding: '0.6rem 1.2rem',
+    fontSize: '1rem',
+    backgroundColor: '#1890ff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  },
+  error: {
+    color: 'red',
+    marginTop: '1rem',
+  },
+  resultBox: {
+    marginTop: '1rem',
+    backgroundColor: '#f6f8fa',
+    padding: '1rem',
+    borderRadius: '6px',
+    border: '1px solid #dcdcdc',
+  },
+  result: {
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+  },
+};
