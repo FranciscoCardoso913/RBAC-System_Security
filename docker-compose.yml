@@ -5,6 +5,9 @@ services:
       - "4000:4000"
     volumes:
       - ./shared:/app/shared
+      - ./shared/certs/ca.pem:/app/certs/ca.pem:ro
+    environment:
+      - NODE_EXTRA_CA_CERTS=/app/certs/ca.pem
 
   service1:
     build: ./service1
@@ -14,6 +17,9 @@ services:
       - auth-server
     volumes:
       - ./shared:/app/shared
+      - ./shared/certs/ca.pem:/app/certs/ca.pem:ro
+    environment:
+      - NODE_EXTRA_CA_CERTS=/app/certs/ca.pem
 
   service2:
     build: ./service2
@@ -23,6 +29,9 @@ services:
       - auth-server
     volumes:
       - ./shared:/app/shared
+      - ./shared/certs/ca.pem:/app/certs/ca.pem:ro
+    environment:
+      - NODE_EXTRA_CA_CERTS=/app/certs/ca.pem
 
   client-app:
     build: ./client-app
@@ -32,3 +41,6 @@ services:
       - auth-server
     volumes:
       - ./shared:/app/shared
+      - ./shared/certs/ca.pem:/app/certs/ca.pem:ro
+    environment:
+      - NODE_EXTRA_CA_CERTS=/app/certs/ca.pem
