@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
+  const { setIsLoggedIn } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -33,6 +35,7 @@ export default function Login() {
       localStorage.setItem('publicKey', data.publicKey);
       localStorage.setItem('role', data.role);
 
+      setIsLoggedIn(true);
       navigate('/dashboard');
     } catch (err) {
       console.error(err);
