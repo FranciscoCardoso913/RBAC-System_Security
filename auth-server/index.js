@@ -59,6 +59,7 @@ function generateKeyPair() {
 // Login endpoint
 const User = require('./models/User');
 const Session = require('./models/Session');
+const verifyTokenAndRole = require('./shared/verifyToken');
 
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -125,6 +126,32 @@ app.get('/public-key/:username', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+
+app.post('/register', verifyTokenAndRole("register"), async (req, res) => {
+
+  const { username, password, role } = req.body;
+
+  if (!username || !password || !role) {
+    return res.status(400).json({ error: 'username, password, and role required' });
+  }
+
+  try {
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+
+    const newUser = new User({ username, password, role });
+    await newUser.save();
+ 
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 
 https.createServer(options, app).listen(4000, () => {
