@@ -44,3 +44,14 @@ services:
       - ./shared/certs/ca.pem:/app/certs/ca.pem:ro
     environment:
       - NODE_EXTRA_CA_CERTS=/app/certs/ca.pem
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
