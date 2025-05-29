@@ -98,9 +98,24 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Logout endpoint
+app.post('/logout', async (req, res) => {
+  const { username } = req.body;
+
+  try {
+    const result = await Session.deleteOne({ username });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'No session found' });
+    }
+    res.json({ message: 'Logged out successfully' });
+  } catch (err) {
+    console.error('Logout error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
-// Assuming `sessions` is accessible here — same as in your /login route
+
 app.get('/public-key/:username', async (req, res) => {
   try {
     const session = await Session.findOne({ username: req.params.username });

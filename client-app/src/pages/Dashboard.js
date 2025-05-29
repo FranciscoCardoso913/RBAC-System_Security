@@ -12,32 +12,27 @@ export default function Dashboard() {
 
     try {
       let response;
-      if(op==='op4' || op==='op5'){
+      if (op === 'op4' || op === 'op5') {
         response = await fetch(`https://localhost:5002/${op}`, {
-          method: op === 'op2' ? 'POST' : 'GET', // op2 uses POST, others GET
+          method: op === 'op2' ? 'POST' : 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`, // Assuming JWT stored here
+            Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`,
           },
-          credentials: 'include', // if your backend needs cookies or sessions
-          // Add body only for POST ops, here only op2
+          credentials: 'include',
           ...(op === 'op2' ? { body: JSON.stringify({}) } : {}),
-
+        });
+      } else {
+        response = await fetch(`https://localhost:5001/${op}`, {
+          method: op === 'op2' ? 'POST' : 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`,
+          },
+          credentials: 'include',
+          ...(op === 'op2' ? { body: JSON.stringify({}) } : {}),
         });
       }
-      else{
-        response = await fetch(`https://localhost:5001/${op}`, {
-          method: op === 'op2' ? 'POST' : 'GET', // op2 uses POST, others GET
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('jwt') || ''}`, // Assuming JWT stored here
-          },
-          credentials: 'include', // if your backend needs cookies or sessions
-          // Add body only for POST ops, here only op2
-          ...(op === 'op2' ? { body: JSON.stringify({}) } : {}),
-
-        });
-     }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -48,6 +43,27 @@ export default function Dashboard() {
       setResult(data);
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  // 🔒 Logout function
+  async function handleLogout() {
+    try {
+      const jwt = localStorage.getItem('jwt');
+      await fetch('https://localhost:4000/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      // Clear session on client side
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('role');
+      window.location.href = '/'; // or redirect to login
     }
   }
 
@@ -66,6 +82,9 @@ export default function Dashboard() {
             {op.toUpperCase()}
           </button>
         ))}
+        <button onClick={handleLogout} style={{ marginLeft: '1rem', color: 'red' }}>
+          Logout
+        </button>
       </div>
 
       {error && (
